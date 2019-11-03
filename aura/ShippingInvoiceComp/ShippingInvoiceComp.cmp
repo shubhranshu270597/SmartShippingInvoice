@@ -1,0 +1,269 @@
+<!--
+  @File Name          : ShippingInvoiceComp.cmp
+  @Description        : 
+  @Author             : shubhranshu
+  @Group              : 
+  @Last Modified By   : shubhranshu
+  @Last Modified On   : 2/11/2019, 1:06:54 AM
+  @Modification Log   : 
+  Ver       Date            Author      		    Modification
+  1.0    29/10/2019   shubhranshu     Initial Version
+-->
+<aura:component controller="ShippingInvoiceController" implements="flexipage:availableForRecordHome,force:hasRecordId">
+    <!-- <link href='/resource/bootstrap/' rel="stylesheet" /> -->
+    <aura:attribute name="cust" type="Customer__c[]" />
+    <aura:attribute name="customerFound" type="boolean" default="false"/>
+    <aura:attribute name="shiInvFound" type="boolean" default="false"/>
+    <aura:attribute name="shiInvInsert" type="boolean" default="false" />
+    <aura:attribute name="itemInsert" type="boolean" default="false" />
+    <aura:attribute name="customerRegNo" type="String" />
+    <aura:attribute name="shippIngInvoiceId" type="String" />
+    <aura:attribute name="editItemId" type="id" />
+    <aura:attribute name="isEdit" type="boolean" />
+    <aura:attribute name="reitem" type="List" />
+    <aura:attribute name="reitemFound" type="boolean" default="false" />
+    <aura:attribute name="shipinv" type="Shipping_Invoice__c[]" />
+    <aura:attribute name="item" type="Item__c" default="{'sobjectType': 'Item__c',
+                                                              'Item_name__c': '',
+                                                              'Pound__c': '',
+                                                              'Quantity__c': '', 
+                                                              'Price__c': ''
+                                                              }" access="GLOBAL" />
+    <aura:attribute name="items" type="List" />
+    <aura:handler name="init" value="{!this}" action="{!c.doInit}" />
+    <!-- <lightning:notificationsLibrary aura:id="notifLib" /> -->
+    <div class="container"> 
+        <div class="row">
+            <div class="col-sm-8">
+                <div class="form-group">
+                    <label for="cname" >Customer Registration number:</label>
+                    <!-- <input type="text" value="{!v.customerRegNo}" required="true" class="form-control" id="cname" placeholder="eg. C-1524" name="cname" /><br /> -->
+                    <lightning:input value="{!v.customerRegNo}" required="true"  class="lightLabel" placeholder="e.g. C-1234" aura:id="customerRegNo"
+                        label="Please enter customer registration number" />
+                        <br />
+                    <button type="button" class="btn btn-success" onclick="{!c.Search}">Search</button>
+                </div>
+            </div>
+            <div class="col-sm-4"></div>
+        </div>
+        <div class="row">
+                <aura:iteration items="{!v.cust}" var="cs">
+                    <h3 style="color:gray;">Customer Details</h3>
+                    <br />
+                    <div class="col-sm-4">
+                        <div class="form-group">
+                            <label for="email">Customer Email:</label>
+                            <p>{!cs.Customer_email__c}</p>
+                        </div>
+                        <div class="form-group">
+                            <label for="mobile">Customer Mobile:</label>
+                            <p>{!cs.Customer_mobile__c}</p>
+                        </div>
+                    </div>
+                    <div class="col-sm-4">
+                        <div class="form-group">
+                            <label for="cname">Customer Name:</label>
+                            <p>{!cs.Name}</p>
+                        </div>
+                        <div class="form-group">
+                            <label for="address">Customer Address:</label>
+                            <p>{!cs.Address__c}</p>
+                        </div>
+                    </div>
+                </aura:iteration>
+                <aura:if  isTrue="{!v.customerFound}">
+                    <div class="col-sm-4">
+                        <button type="button" class="btn btn-primary" onclick="{!c.generateShippingInvoice}">New order</button>
+                    </div>
+                </aura:if>  
+        </div>
+    </div>
+
+    <div class="container">
+        <aura:if isTrue="{!v.shiInvInsert}">
+                <article class="slds-card">
+                    <div class="slds-m-around--large">
+                        <h3>Please enter the Item information.</h3>
+                        <div class="slds-form-element slds-is-required" style="margin-top:5px">
+                            <label class="slds-form-element__label">
+                                <abbr class="slds-required" title="required">*</abbr>Item Name</label>
+                            <ui:inputText class="slds-input" placeholder="e.g. Hp secure printer" value="{!v.item.Item_name__c}" />
+                        </div>
+                        <div class="slds-form-element slds-is-required" style="margin-top:2px">
+                            <label class="slds-form-element__label">
+                                <abbr class="slds-required" title="required">*</abbr>Pound</label>
+                            <ui:inputNumber class="slds-input" placeholder="e.g. 2" value="{!v.item.Pound__c}" />
+                        </div>
+                        <div class="slds-form-element slds-is-required" style="margin-top:2px">
+                            <label class="slds-form-element__label" title="required">
+                                <abbr class="slds-required" title="required">*</abbr>Quantity</label>
+                            <ui:inputNumber class="slds-input" placeholder="e.g. 1" value="{!v.item.Quantity__c}" />
+                        </div>
+                        <div class="slds-form-element slds-is-required" style="margin-top:2px">
+                            <label class="slds-form-element__label" title="required">
+                                <abbr class="slds-required" title="required">*</abbr>Price (in cent)</label>
+                            <ui:inputNumber class="slds-input" placeholder="eg. 200" value="{!v.item.Price__c}" />
+                        </div>
+                        <br />
+                        <div class="col-md-4" style="margin-top: 20px;">
+                            <button type="button" class="btn btn-info" onclick="{!c.generateNewItem}">Create Item</button> &nbsp;&nbsp;&nbsp;
+                            <!-- <button type="button" class="btn btn-info" onclick="{!c.showItems}">Show All Items</button>  -->
+                        </div>
+                    </div>
+                </article>
+                <!-- <button type="button" class="btn btn-primary" onclick="{!c.showShippingInvoice}">Refresh Shipping Invoice</button>       -->
+            </aura:if>
+            <br /><br /><br /><br />
+            <aura:if isTrue="{!v.shiInvFound}">
+                <h3 style="color: gray;">Shipping Invoice Details</h3>
+                <br />
+                <aura:iteration items="{!v.shipinv}" var="si">
+                    <div class="col-sm-4">
+                        <div class="form-group">
+                            <label for="email">Service Tax (&#37;):</label>
+                            <p>{!si.Tax__c}</p>
+                        </div>
+                        <div class="form-group">
+                            <label for="mobile">Shipping charges (&#36;):</label>
+                            <p>{!si.Shipping__c}</p>
+                        </div>
+                        <div class="form-group">
+                            <label for="mobile">Sub Total (in cent):</label>
+                            <p>{!si.Total_Price_for_all_items__c}</p>
+                        </div>
+                        <div class="form-group">
+                            <label for="mobile">Total Weight:</label>
+                            <p>{!si.Total_pound_for_all_items__c}</p>
+                        </div>
+                    </div>
+                    <div class="col-sm-4">
+                        <div class="form-group">
+                            <label for="cname">Shipping Address:</label>
+                            <p>{!si.Shipping_Address__c}</p>
+                        </div>
+                        <div class="form-group">
+                            <label for="address">Grand Total(&#36;):</label>
+                            <p>{!si.GrandTotal__c}</p>
+                        </div>
+                        <div class="form-group">
+                            <label for="mobile">Shipping Discount (&#36;):</label>
+                            <p>{!si.Shipping_Discount__c}</p>
+                        </div>
+                    </div>
+                </aura:iteration>
+            </aura:if>
+            <br /><br /> 
+            <aura:if isTrue="{!v.itemInsert}">
+                <table class="slds-table slds-table_bordered slds-table_striped slds-table_cell-buffer slds-table_fixed-layout" style="padding: 10px;">
+                    <thead>
+                        <tr class="slds-text-heading_label">
+                            <th scope="col">
+                                <div class="slds-truncate" title="ID">ID</div>
+                            </th>
+                            <th scope="col">
+                                <div class="slds-truncate" title="ItemName">Item Name</div>
+                            </th>
+                            <th scope="col">
+                                <div class="slds-truncate" title="Pound">Item Pound</div>
+                            </th>
+                            <th scope="col">
+                                <div class="slds-truncate" title="itemQty">Quantity</div>
+                            </th>
+                            <th scope="col">
+                                <div class="slds-truncate" title="uprice">Unit Price (in cent)</div>
+                            </th>
+                            <th scope="col">
+                                <div class="slds-truncate" title="uprice">Action</div>
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Use the Apex model and controller to fetch server side data -->
+                        <aura:iteration items="{!v.items}" var="it">
+                            <tr>
+                                <th scope="row">
+                                    <div class="slds-truncate" title="{!it.Id}">{!it.Id}</div>
+                                </th>
+                                <th scope="row">
+                                    <div class="slds-truncate" title="{!it.Item_name__c}">{!it.Item_name__c}</div>
+                                </th>
+                                <td>
+                                    <div class="slds-truncate" title="{!it.Pound__c}">{!it.Pound__c}</div>
+                                </td>
+                                <td>
+                                    <div class="slds-truncate" title="{!it.Quantity__c}">{!it.Quantity__c}</div>
+                                </td>
+                                <td>
+                                    <div class="slds-truncate" title="{!it.Price__c}">{!it.Price__c}</div>
+                                </td>
+                                <td>
+                                    <form class="item-form" onsubmit="{!c.deleteItem}">
+                                        <input type="hidden" value="{!it.Id}" class="item-id" />
+                                        <input type="hidden" value="{!it.Item_name__c}" class="item-name" />
+                                        <lightning:button label="Delete" iconName="utility:delete" iconPosition="left"
+                                            variant="destructive" type="submit" />
+                                        <lightning:button label="Update" iconName="utility:edit" iconPosition="left"
+                                        variant="success" onclick="{!c.editItem}" />
+                                    </form>
+                                    
+                                    <!-- <button type="button" class="btn btn-success" onclick="{!c.editItem}" id="{!it.Id}">Update Item</button> -->
+                                </td>
+                            </tr>
+                        </aura:iteration>
+                    </tbody>
+                </table>
+        </aura:if>
+    </div>
+    <div class="container">
+        <aura:renderIf isTrue="{!v.isEdit}">
+            <center>
+                <!-- <ui:button label="Save" class="btn btn-success" press="{!c.save}" />
+                <force:recordEdit aura:id="editItem" recordId="{!v.editItemId}" /> -->
+                
+                <lightning:recordForm
+                recordId = "{!v.editItemId}"
+                objectApiName="Item__c"
+                layoutType="Full"
+                mode="edit" 
+                onsuccess="{!c.handleSuccess}"
+                onerror="{!c.handleError}"/>
+                
+            </center>
+        </aura:renderIf>
+    </div>
+    <aura:if  isTrue="{!and(v.reitemFound, v.shiInvInsert)}">
+        <div class="container">
+            <h2 style="color:gray;">Recommeded Items</h2>
+            <br />
+            <table class="table table-bordered">
+            <thead>
+                <tr>
+                <th>Name</th>
+                <th>Pound</th>
+                <th>Qunatity</th>
+                <th>Price (in cent)</th>
+                <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                <aura:iteration items="{!v.reitem}" var="ri">
+                    <tr>
+                        <td>{!ri.Reitem_Name__c}</td>
+                        <td>{!ri.Pound__c}</td>
+                        <td>{!ri.Quantity__c}</td>
+                        <td>{!ri.Unit_Price__c}</td>
+                        <td>
+                            <form class="item-form" onsubmit="{!c.addReitem}">
+                                <input type="hidden" value="{!ri.Id}" class="reitem-id" />
+                                <input type="hidden" value="{!ri.Reitem_Name__c}" class="reitem-name" />
+                                <lightning:button label="Add to my cart" iconName="utility:cart" iconPosition="left"
+                                            variant="brand" type="submit" />
+                            </form>
+                        </td>
+                    </tr>
+                </aura:iteration>
+            </tbody>
+            </table>
+        </div>
+    </aura:if>   
+</aura:component>
